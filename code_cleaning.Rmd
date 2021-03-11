@@ -1,0 +1,168 @@
+---
+title: "code_cleaning"
+author: "Qing Wen"
+date: "2021/3/11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+raw_data <- read.csv("2014victimization.csv", header = T)
+```
+
+
+```{r, echo=FALSE}
+# select variables of interest and change variable names
+cleaned_data <- raw_data %>% 
+  select(totvic, 
+         agegr10,
+         ncp_10, 
+         sfc_10, 
+         sfc_30, 
+         sfc_40,  
+         whw_120,
+         whw_230,
+         nsc_10,
+         nsc_20,
+         nsc_30,
+         nsc_50,
+         peo_110,
+         peo_130,
+         peo_180,
+         srh_115,
+         numvactc) %>% 
+  rename(num_victimization = totvic,
+         age_group = agegr10, 
+         neighbours_contacted_police_criminal_behaviour = ncp_10,
+         crime_safety_carry_sth_defend = sfc_10,
+         crime_safety_plan_safe_route = sfc_30,
+         crime_safety_stayhome_night = sfc_40,
+         num_hours_worked_per_week = whw_120,
+         work_schedule_at_main_job = whw_230,
+         neighbourhood_lower_higher_crime = nsc_10,
+         neighbourhood_increase_decrease_crime = nsc_20,
+         feeling_safety_walk_alone_night = nsc_30,
+         feeling_safety_walk_alone_night_moreoften = nsc_50,
+         ea_work_class_volunteer = peo_110,
+         ea_bar_clubs_pub = peo_130,
+         ea_other = peo_180,
+         self_rated_mental_health = srh_115,
+         ea_per_month = numvactc)
+
+
+```
+
+```{r, echo=FALSE,message=FALSE}
+# rename different levels for the variable
+cleaned_data <- cleaned_data %>% 
+  mutate(be_victimized = ifelse(num_victimization == 0, 0, 1)) %>%
+  mutate(age_group = case_when(
+    age_group == 1~"15_to_24",
+    age_group == 2~"25_to_34",
+    age_group == 3~"35_to_44",
+    age_group == 4~"45_to_54",
+    age_group == 5~"55_to_64",
+    age_group == 6~"65_to_74",
+    age_group == 7~"over_75"))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(neighbours_contacted_police_criminal_behaviour = case_when(
+    neighbours_contacted_police_criminal_behaviour == 1~"very likely",
+    neighbours_contacted_police_criminal_behaviour == 2~"somewhat likely",
+    neighbours_contacted_police_criminal_behaviour == 3~"somewhat unlikely",
+    neighbours_contacted_police_criminal_behaviour == 4~"not at all likely",
+    neighbours_contacted_police_criminal_behaviour == 5~"just moved into the area"
+  )) %>% 
+  mutate(crime_safety_carry_sth_defend = case_when(
+    crime_safety_carry_sth_defend == 1~ "Yes",
+    crime_safety_carry_sth_defend == 2~ "No"
+  )) %>% 
+  mutate(crime_safety_plan_safe_route = case_when(
+    crime_safety_plan_safe_route == 1~ "Yes",
+    crime_safety_plan_safe_route == 2~ "No"
+  )) %>% 
+    mutate(crime_safety_stayhome_night = case_when(
+    crime_safety_stayhome_night == 1~ "Yes",
+    crime_safety_stayhome_night == 2~ "No"
+  )) %>% 
+  mutate(num_hours_worked_per_week = ifelse(num_hours_worked_per_week > 200, NA, num_hours_worked_per_week))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(work_schedule_at_main_job = case_when(
+    work_schedule_at_main_job == 1~"A regular daytime schedule or shift",
+    work_schedule_at_main_job == 2~"A regular evening shift",
+    work_schedule_at_main_job == 3~"A regular night shift",
+    work_schedule_at_main_job == 4~"A rotating shift",     
+    work_schedule_at_main_job == 5~"A split shift",     
+    work_schedule_at_main_job == 6~"A compressed work week",
+    work_schedule_at_main_job == 7~"On call or casual",
+    work_schedule_at_main_job == 8~"An irregular schedule",
+    work_schedule_at_main_job == 9~"Other"         
+  ))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(neighbourhood_lower_higher_crime = case_when(
+  neighbourhood_lower_higher_crime == 1~ "higher",
+  neighbourhood_lower_higher_crime == 2~ "about the same",
+  neighbourhood_lower_higher_crime == 3~ "lower"
+  ))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(neighbourhood_increase_decrease_crime = case_when(
+  neighbourhood_increase_decrease_crime == 1~ "increased",
+  neighbourhood_increase_decrease_crime == 2~ "decreased",
+  neighbourhood_increase_decrease_crime == 3~ "about the same",
+  neighbourhood_increase_decrease_crime == 4~ "just moved"
+  ))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(feeling_safety_walk_alone_night = case_when(
+  feeling_safety_walk_alone_night == 1~ "very safe",
+  feeling_safety_walk_alone_night == 2~ "reasonably safe",
+  feeling_safety_walk_alone_night == 3~ "somewhat unsafe",
+  feeling_safety_walk_alone_night == 4~ "very unsafe",
+  feeling_safety_walk_alone_night == 5~ "do not walk alone"
+  ))
+
+cleaned_data <- cleaned_data %>% 
+  mutate(feeling_safety_walk_alone_night_moreoften = case_when(
+  feeling_safety_walk_alone_night_moreoften == 1~ "Yes",
+  feeling_safety_walk_alone_night_moreoften == 2~ "No"
+  ))
+
+# change the values of the levels to NA that indicate non-response
+cleaned_data <- cleaned_data %>% 
+  mutate(ea_work_class_volunteer = ifelse(ea_work_class_volunteer > 95, NA, ea_work_class_volunteer)) %>% 
+  mutate(ea_bar_clubs_pub = ifelse(ea_bar_clubs_pub > 95, NA, ea_bar_clubs_pub)) %>% 
+  mutate(ea_other = ifelse(ea_other > 95, NA, ea_other)) %>% 
+  mutate(ea_per_month = ifelse(ea_per_month > 95, NA, ea_per_month))
+
+# rename mental health levels
+cleaned_data <-cleaned_data %>%
+  mutate(self_rated_mental_health = case_when(
+    self_rated_mental_health == 1 ~ "Excellent",
+    self_rated_mental_health == 2 ~ "Very good",
+    self_rated_mental_health == 3 ~ "Good",
+    self_rated_mental_health == 4 ~ "Fair",
+    self_rated_mental_health == 5 ~ "Poor"))
+
+# make a new indicator variable that has value 1 if the observation has been victimized, and 0 otherwise.
+cleaned_data <- cleaned_data %>% 
+    mutate(be_victimized_factor = case_when(
+    be_victimized == 1~ "Yes",
+    be_victimized == 0~ "No"
+  ))
+```
+
+```{r}
+# output the dataset after cleaning
+write_csv(cleaned_data, "E:/Past Courses/STA304/Problem Set 2/final_data.csv")
+```
+
